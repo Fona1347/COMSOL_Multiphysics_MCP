@@ -204,6 +204,16 @@ class PDFProcessor:
                 start = 0
         
         return chunks
+
+    def ensure_unique_chunk_ids(self, chunks: list[DocumentChunk]) -> None:
+        """Ensure ChromaDB IDs are unique within one processed PDF batch."""
+        seen = {}
+        for chunk in chunks:
+            base_id = chunk.chunk_id
+            count = seen.get(base_id, 0)
+            if count:
+                chunk.chunk_id = f"{base_id}_dup{count}"
+            seen[base_id] = count + 1
     
     def process_pdf(self, pdf_path: Path) -> list[DocumentChunk]:
         """Process a single PDF file into chunks."""
@@ -243,6 +253,7 @@ class PDFProcessor:
                 )
                 all_chunks.extend(chunks)
         
+        self.ensure_unique_chunk_ids(all_chunks)
         logger.info(f"  Generated {len(all_chunks)} chunks from {module}")
         return all_chunks
     
