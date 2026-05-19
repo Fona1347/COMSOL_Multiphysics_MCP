@@ -246,6 +246,50 @@ class VectorRetriever:
             "modules": list(modules),
             "module_count": len(modules),
         }
+
+    def get_lightweight_stats(self) -> dict:
+        """Get vector-store statistics without loading the embedding model."""
+        stats = {
+            "initialized": False,
+            "count": 0,
+            "modules": [],
+            "module_count": 0,
+            "db_exists": self.db_dir.exists(),
+        }
+
+        if not self.db_dir.exists():
+            return stats
+
+        try:
+            import chromadb
+
+            client = chromadb.PersistentClient(path=str(self.db_dir))
+            collection = client.get_collection("comsol_docs")
+            count = collection.count()
+            modules = set()
+
+            if count:
+                batch_size = 1000
+                for offset in range(0, count, batch_size):
+                    results = collection.get(
+                        include=["metadatas"],
+                        limit=batch_size,
+                        offset=offset,
+                    )
+                    for meta in results.get("metadatas", []):
+                        if meta and "module" in meta:
+                            modules.add(meta["module"])
+
+            stats.update({
+                "initialized": True,
+                "count": count,
+                "modules": sorted(modules),
+                "module_count": len(modules),
+            })
+            return stats
+        except Exception as e:
+            stats["error"] = str(e)
+            return stats
     
     def clear(self) -> bool:
         """Clear all documents from the vector store."""

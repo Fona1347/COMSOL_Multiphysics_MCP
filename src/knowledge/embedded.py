@@ -400,9 +400,7 @@ def get_pdf_search_status() -> dict:
         return result
     
     retriever = get_retriever()
-    if not retriever.is_initialized:
-        retriever.initialize()
-    stats = retriever.get_stats()
+    stats = retriever.get_lightweight_stats()
     result["vector_store"] = stats
     
     try:
@@ -417,7 +415,7 @@ def get_pdf_search_status() -> dict:
     
     if stats.get("count", 0) == 0:
         result["status"] = "Knowledge base not built"
-        result["hint"] = "Run: python scripts/build_knowledge_base.py"
+        result["hint"] = "Run: python scripts/build_knowledge_base.py --limit 2 --rebuild"
     else:
         result["status"] = "Ready"
     

@@ -1,6 +1,7 @@
 """PDF document processor for COMSOL documentation."""
 
 import re
+import hashlib
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Generator
@@ -41,8 +42,8 @@ class PDFProcessor:
     # Chapter patterns to identify section breaks
     CHAPTER_PATTERNS = [
         r"^Chapter\s+(\d+)[:\s]+(.+)$",
-        r"^(\d+(?:\.\d+)*)\s+(.+)$",
-        r"^([A-Z][A-Za-z\s]+)$",
+        r"^(\d+(?:\.\d+)*)\s+([A-Z][A-Za-z0-9 ,:/()\-]{3,120})$",
+        r"^([A-Z][A-Z0-9 ,:/()\-]{3,120})$",
     ]
     
     # Minimum chunk size (characters)
@@ -99,6 +100,27 @@ class PDFProcessor:
         text = re.sub(r"^\d+\s*$", "", text, flags=re.MULTILINE)
         return text.strip()
     
+    def _detect_chapter_title(self, line: str) -> Optional[str]:
+        """Detect a best-effort chapter or section title from one line."""
+        line = re.sub(r"^\d+\s*\|\s*", "", line.strip())
+
+        spaced_chapter = re.match(
+            r"^C\s+H\s+A\s+P\s+T\s+E\s+R\s+(\d+)\b",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if spaced_chapter:
+            return f"Chapter {spaced_chapter.group(1)}"
+
+        for pattern in self.CHAPTER_PATTERNS:
+            match = re.match(pattern, line)
+            if match:
+                if len(match.groups()) >= 2:
+                    return match.group(2).strip()
+                return match.group(1).strip()
+
+        return None
+
     def detect_chapters(self, text: str) -> list[tuple[str, int, int]]:
         """Detect chapter boundaries in text.
         
@@ -115,20 +137,14 @@ class PDFProcessor:
             if not line:
                 continue
             
-            for pattern in self.CHAPTER_PATTERNS:
-                match = re.match(pattern, line)
-                if match:
-                    # Save previous chapter
-                    if chapter_start < i:
-                        chapters.append((current_chapter, chapter_start, i))
-                    
-                    # Start new chapter
-                    if len(match.groups()) >= 2:
-                        current_chapter = match.group(2).strip()
-                    else:
-                        current_chapter = match.group(1).strip()
-                    chapter_start = i
-                    break
+            detected_chapter = self._detect_chapter_title(line)
+            if detected_chapter:
+                # Save previous chapter
+                if chapter_start < i:
+                    chapters.append((current_chapter, chapter_start, i))
+
+                current_chapter = detected_chapter
+                chapter_start = i
         
         # Add last chapter
         if chapter_start < len(lines):
@@ -137,7 +153,8 @@ class PDFProcessor:
         return chapters
     
     def split_into_chunks(self, text: str, source: str, module: str, 
-                          page: Optional[int] = None) -> list[DocumentChunk]:
+                          page: Optional[int] = None,
+                          chapter: Optional[str] = None) -> list[DocumentChunk]:
         """Split text into chunks for vector storage."""
         chunks = []
         text = self.clean_text(text)
@@ -167,11 +184,16 @@ class PDFProcessor:
             if len(chunk_text) >= self.MIN_CHUNK_SIZE:
                 # Use source file path for unique ID (handles multiple PDFs per module)
                 safe_source = source.replace("/", "_").replace("\\", "_").replace(".pdf", "")
-                chunk_id = f"{safe_source}_p{page or 0}_c{chunk_index}"
+                safe_chapter = ""
+                if chapter:
+                    safe_chapter = "_" + re.sub(r"[^A-Za-z0-9]+", "_", chapter).strip("_")[:40]
+                digest = hashlib.sha1(chunk_text.encode("utf-8")).hexdigest()[:10]
+                chunk_id = f"{safe_source}_p{page or 0}{safe_chapter}_c{chunk_index}_{digest}"
                 chunks.append(DocumentChunk(
                     text=chunk_text,
                     source=source,
                     module=module,
+                    chapter=chapter,
                     page=page,
                     chunk_id=chunk_id,
                 ))
@@ -192,8 +214,34 @@ class PDFProcessor:
         logger.info(f"Processing: {source}")
         
         for page_num, text in self.extract_text_from_pdf(pdf_path):
-            chunks = self.split_into_chunks(text, source, module, page_num)
-            all_chunks.extend(chunks)
+            cleaned = self.clean_text(text)
+            chapters = self.detect_chapters(cleaned)
+            use_chapters = (
+                len(chapters) > 1
+                or (chapters and chapters[0][0] != "Introduction")
+            )
+
+            if use_chapters:
+                lines = cleaned.split("\n")
+                for chapter, start, end in chapters:
+                    chapter_text = "\n".join(lines[start:end])
+                    chunks = self.split_into_chunks(
+                        chapter_text,
+                        source,
+                        module,
+                        page_num,
+                        chapter=chapter,
+                    )
+                    all_chunks.extend(chunks)
+            else:
+                chunks = self.split_into_chunks(
+                    cleaned,
+                    source,
+                    module,
+                    page_num,
+                    chapter=f"Page {page_num}",
+                )
+                all_chunks.extend(chunks)
         
         logger.info(f"  Generated {len(all_chunks)} chunks from {module}")
         return all_chunks
