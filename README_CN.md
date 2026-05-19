@@ -54,6 +54,30 @@ python scripts/build_knowledge_base.py
 python scripts/build_knowledge_base.py --status
 ```
 
+### PDF 知识库说明
+
+PDF 向量知识库保存在本地 `knowledge_base/` 下，属于可重新生成的缓存，不提交到 Git。
+
+检查知识库状态：
+
+```bash
+python scripts/build_knowledge_base.py --status
+```
+
+首次使用建议先做小样本构建：
+
+```bash
+python scripts/build_knowledge_base.py --limit 2 --rebuild
+```
+
+确认成功后，再构建完整 PDF 索引：
+
+```bash
+python scripts/build_knowledge_base.py --rebuild
+```
+
+状态检查只读取 ChromaDB 元信息，不加载 embedding 模型；只有构建和检索时才会初始化 embedding。
+
 ## 使用方法
 
 ### 方式 1：配合 opencode 使用

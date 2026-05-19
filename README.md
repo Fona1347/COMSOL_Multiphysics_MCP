@@ -54,6 +54,30 @@ python scripts/build_knowledge_base.py
 python scripts/build_knowledge_base.py --status
 ```
 
+### PDF Knowledge Base Notes
+
+The PDF knowledge base is stored locally under `knowledge_base/` and is treated as a reproducible cache. It is not committed to Git.
+
+To check whether the knowledge base has been built:
+
+```bash
+python scripts/build_knowledge_base.py --status
+```
+
+For a first-time smoke test, build only a small subset:
+
+```bash
+python scripts/build_knowledge_base.py --limit 2 --rebuild
+```
+
+After the smoke test succeeds, build the full PDF index:
+
+```bash
+python scripts/build_knowledge_base.py --rebuild
+```
+
+The status command performs a lightweight ChromaDB check and does not load the embedding model. Full embedding initialization only happens during build or search.
+
 ## Usage
 
 ### Option 1: With opencode
