@@ -54,7 +54,6 @@ python scripts/build_knowledge_base.py
 python scripts/build_knowledge_base.py --status
 ```
 
-
 ## Usage
 
 ### Option 1: With opencode
@@ -94,7 +93,7 @@ Create `opencode.json` in project root:
 
 ## Code Structure
 
-```
+```java
 comsol_mcp/
 ├── opencode.json                    # MCP server config for opencode
 ├── pyproject.toml                   # Python project config
@@ -149,123 +148,123 @@ comsol_mcp/
 
 ### Session (4)
 
-| Tool | Description |
-|------|-------------|
-| `comsol_start` | Start local COMSOL client |
-| `comsol_connect` | Connect to remote server |
-| `comsol_disconnect` | Clear session |
-| `comsol_status` | Get session info |
+| Tool                  | Description               |
+| --------------------- | ------------------------- |
+| `comsol_start`      | Start local COMSOL client |
+| `comsol_connect`    | Connect to remote server  |
+| `comsol_disconnect` | Clear session             |
+| `comsol_status`     | Get session info          |
 
 ### Model (9)
 
-| Tool | Description |
-|------|-------------|
-| `model_load` | Load .mph file |
-| `model_create` | Create empty model |
-| `model_save` | Save to file |
+| Tool                   | Description         |
+| ---------------------- | ------------------- |
+| `model_load`         | Load .mph file      |
+| `model_create`       | Create empty model  |
+| `model_save`         | Save to file        |
 | `model_save_version` | Save with timestamp |
-| `model_list` | List loaded models |
-| `model_set_current` | Set active model |
-| `model_clone` | Clone model |
-| `model_remove` | Remove from memory |
-| `model_inspect` | Get model structure |
+| `model_list`         | List loaded models  |
+| `model_set_current`  | Set active model    |
+| `model_clone`        | Clone model         |
+| `model_remove`       | Remove from memory  |
+| `model_inspect`      | Get model structure |
 
 ### Parameters (5)
 
-| Tool | Description |
-|------|-------------|
-| `param_get` | Get parameter value |
-| `param_set` | Set parameter |
-| `param_list` | List all parameters |
+| Tool                  | Description            |
+| --------------------- | ---------------------- |
+| `param_get`         | Get parameter value    |
+| `param_set`         | Set parameter          |
+| `param_list`        | List all parameters    |
 | `param_sweep_setup` | Setup parametric sweep |
-| `param_description` | Get/set description |
+| `param_description` | Get/set description    |
 
 ### Geometry (14)
 
-| Tool | Description |
-|------|-------------|
-| `geometry_list` | List geometry sequences |
-| `geometry_create` | Create geometry sequence |
-| `geometry_add_feature` | Add generic feature |
-| `geometry_add_block` | Add rectangular block |
-| `geometry_add_cylinder` | Add cylinder |
-| `geometry_add_sphere` | Add sphere |
-| `geometry_add_rectangle` | Add 2D rectangle |
-| `geometry_add_circle` | Add 2D circle |
-| `geometry_boolean_union` | Union objects |
-| `geometry_boolean_difference` | Subtract objects |
-| `geometry_import` | Import CAD file |
-| `geometry_build` | Build geometry |
-| `geometry_list_features` | List features |
-| `geometry_get_boundaries` | Get boundary numbers |
+| Tool                            | Description              |
+| ------------------------------- | ------------------------ |
+| `geometry_list`               | List geometry sequences  |
+| `geometry_create`             | Create geometry sequence |
+| `geometry_add_feature`        | Add generic feature      |
+| `geometry_add_block`          | Add rectangular block    |
+| `geometry_add_cylinder`       | Add cylinder             |
+| `geometry_add_sphere`         | Add sphere               |
+| `geometry_add_rectangle`      | Add 2D rectangle         |
+| `geometry_add_circle`         | Add 2D circle            |
+| `geometry_boolean_union`      | Union objects            |
+| `geometry_boolean_difference` | Subtract objects         |
+| `geometry_import`             | Import CAD file          |
+| `geometry_build`              | Build geometry           |
+| `geometry_list_features`      | List features            |
+| `geometry_get_boundaries`     | Get boundary numbers     |
 
 ### Physics (16)
 
-| Tool | Description |
-|------|-------------|
-| `physics_list` | List physics interfaces |
-| `physics_get_available` | Available physics types |
-| `physics_add` | Add generic physics |
-| `physics_add_electrostatics` | Add Electrostatics |
-| `physics_add_solid_mechanics` | Add Solid Mechanics |
-| `physics_add_heat_transfer` | Add Heat Transfer |
-| `physics_add_laminar_flow` | Add Laminar Flow |
-| `physics_configure_boundary` | Configure boundary condition |
-| `physics_set_material` | Assign material |
-| `physics_list_features` | List physics features |
-| `physics_remove` | Remove physics |
-| `multiphysics_add` | Add coupling |
-| `physics_interactive_setup_heat` | Interactive heat BC setup |
-| `physics_setup_heat_boundaries` | Configure heat boundaries |
-| `physics_interactive_setup_flow` | Interactive flow BC setup |
-| `physics_boundary_selection` | Generic boundary setup |
+| Tool                               | Description                  |
+| ---------------------------------- | ---------------------------- |
+| `physics_list`                   | List physics interfaces      |
+| `physics_get_available`          | Available physics types      |
+| `physics_add`                    | Add generic physics          |
+| `physics_add_electrostatics`     | Add Electrostatics           |
+| `physics_add_solid_mechanics`    | Add Solid Mechanics          |
+| `physics_add_heat_transfer`      | Add Heat Transfer            |
+| `physics_add_laminar_flow`       | Add Laminar Flow             |
+| `physics_configure_boundary`     | Configure boundary condition |
+| `physics_set_material`           | Assign material              |
+| `physics_list_features`          | List physics features        |
+| `physics_remove`                 | Remove physics               |
+| `multiphysics_add`               | Add coupling                 |
+| `physics_interactive_setup_heat` | Interactive heat BC setup    |
+| `physics_setup_heat_boundaries`  | Configure heat boundaries    |
+| `physics_interactive_setup_flow` | Interactive flow BC setup    |
+| `physics_boundary_selection`     | Generic boundary setup       |
 
 ### Mesh (3)
 
-| Tool | Description |
-|------|-------------|
-| `mesh_list` | List mesh sequences |
-| `mesh_create` | Generate mesh |
-| `mesh_info` | Get mesh statistics |
+| Tool            | Description         |
+| --------------- | ------------------- |
+| `mesh_list`   | List mesh sequences |
+| `mesh_create` | Generate mesh       |
+| `mesh_info`   | Get mesh statistics |
 
 ### Study & Solving (8)
 
-| Tool | Description |
-|------|-------------|
-| `study_list` | List studies |
-| `study_solve` | Solve synchronously |
-| `study_solve_async` | Solve in background |
-| `study_get_progress` | Get progress |
-| `study_cancel` | Cancel solving |
-| `study_wait` | Wait for completion |
-| `solutions_list` | List solutions |
-| `datasets_list` | List datasets |
+| Tool                   | Description         |
+| ---------------------- | ------------------- |
+| `study_list`         | List studies        |
+| `study_solve`        | Solve synchronously |
+| `study_solve_async`  | Solve in background |
+| `study_get_progress` | Get progress        |
+| `study_cancel`       | Cancel solving      |
+| `study_wait`         | Wait for completion |
+| `solutions_list`     | List solutions      |
+| `datasets_list`      | List datasets       |
 
 ### Results (9)
 
-| Tool | Description |
-|------|-------------|
-| `results_evaluate` | Evaluate expression |
-| `results_global_evaluate` | Evaluate scalar |
-| `results_inner_values` | Get time steps |
-| `results_outer_values` | Get sweep values |
-| `results_export_data` | Export data |
-| `results_export_image` | Export plot image |
-| `results_exports_list` | List export nodes |
-| `results_plots_list` | List plot nodes |
+| Tool                        | Description         |
+| --------------------------- | ------------------- |
+| `results_evaluate`        | Evaluate expression |
+| `results_global_evaluate` | Evaluate scalar     |
+| `results_inner_values`    | Get time steps      |
+| `results_outer_values`    | Get sweep values    |
+| `results_export_data`     | Export data         |
+| `results_export_image`    | Export plot image   |
+| `results_exports_list`    | List export nodes   |
+| `results_plots_list`      | List plot nodes     |
 
 ### Knowledge (8)
 
-| Tool | Description |
-|------|-------------|
-| `docs_get` | Get documentation |
-| `docs_list` | List available docs |
-| `physics_get_guide` | Physics quick guide |
-| `troubleshoot` | Troubleshooting help |
-| `modeling_best_practices` | Best practices |
-| `pdf_search` | Search PDF docs |
-| `pdf_search_status` | PDF search status |
-| `pdf_list_modules` | List PDF modules |
+| Tool                        | Description          |
+| --------------------------- | -------------------- |
+| `docs_get`                | Get documentation    |
+| `docs_list`               | List available docs  |
+| `physics_get_guide`       | Physics quick guide  |
+| `troubleshoot`            | Troubleshooting help |
+| `modeling_best_practices` | Best practices       |
+| `pdf_search`              | Search PDF docs      |
+| `pdf_search_status`       | PDF search status    |
+| `pdf_list_modules`        | List PDF modules     |
 
 ## Example Cases
 
@@ -288,6 +287,7 @@ comsol_mcp/
 **Script**: `client_script/create_chip_tsv_final.py`
 
 **Run**:
+
 ```bash
 cd /path/to/comsol-mcp
 python client_script/create_chip_tsv_final.py
@@ -314,6 +314,7 @@ python client_script/create_chip_tsv_final.py
 **Script**: `client_script/create_micromixer_auto.py`
 
 **Run**:
+
 ```bash
 cd /path/to/comsol-mcp
 python client_script/create_micromixer_auto.py
@@ -331,6 +332,7 @@ Models are saved with structured paths:
 ```
 
 Example:
+
 ```
 ./comsol_models/chip_tsv_thermal/chip_tsv_thermal_20260216_140514.mph
 ./comsol_models/chip_tsv_thermal/chip_tsv_thermal_latest.mph
@@ -361,13 +363,13 @@ bc.set('U0', '1[mm/s]')
 
 ### 2. Boundary Condition Property Names
 
-| Physics | Condition | Property |
-|---------|-----------|----------|
-| Heat Transfer | HeatFluxBoundary | `q0` |
-| Heat Transfer | TemperatureBoundary | `T0` |
-| Heat Transfer | ConvectiveHeatFlux | `h`, `Text` |
-| Laminar Flow | InletBoundary | `U0`, `NormalInflowVelocity` |
-| Laminar Flow | OutletBoundary | `p0` |
+| Physics       | Condition           | Property                         |
+| ------------- | ------------------- | -------------------------------- |
+| Heat Transfer | HeatFluxBoundary    | `q0`                           |
+| Heat Transfer | TemperatureBoundary | `T0`                           |
+| Heat Transfer | ConvectiveHeatFlux  | `h`, `Text`                  |
+| Laminar Flow  | InletBoundary       | `U0`, `NormalInflowVelocity` |
+| Laminar Flow  | OutletBoundary      | `p0`                           |
 
 ### 3. Client Session Limitation
 
@@ -389,14 +391,14 @@ export HF_ENDPOINT=https://hf-mirror.com
 
 ## Development Status
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Basic framework + Session + Model | Done |
-| 2 | Parameters + Solving + Results | Done |
-| 3 | Geometry + Physics + Mesh | Done |
-| 4 | Embedded knowledge + Tool docs | Done |
-| 5 | PDF vector retrieval | Done |
-| 6 | Integration tests | In Progress |
+| Phase | Description                       | Status      |
+| ----- | --------------------------------- | ----------- |
+| 1     | Basic framework + Session + Model | Done        |
+| 2     | Parameters + Solving + Results    | Done        |
+| 3     | Geometry + Physics + Mesh         | Done        |
+| 4     | Embedded knowledge + Tool docs    | Done        |
+| 5     | PDF vector retrieval              | Done        |
+| 6     | Integration tests                 | In Progress |
 
 ## Next Steps
 
@@ -406,15 +408,14 @@ export HF_ENDPOINT=https://hf-mirror.com
 4. **More Examples** - Add electrostatics, solid mechanics cases
 5. **Error Handling** - Improve error messages and recovery
 
-
 ## Resources
 
-| URI | Description |
-|-----|-------------|
-| `comsol://session/info` | Session information |
-| `comsol://model/{name}/tree` | Model tree structure |
-| `comsol://model/{name}/parameters` | Model parameters |
-| `comsol://model/{name}/physics` | Physics interfaces |
+| URI                                  | Description          |
+| ------------------------------------ | -------------------- |
+| `comsol://session/info`            | Session information  |
+| `comsol://model/{name}/tree`       | Model tree structure |
+| `comsol://model/{name}/parameters` | Model parameters     |
+| `comsol://model/{name}/physics`    | Physics interfaces   |
 
 ## License
 
