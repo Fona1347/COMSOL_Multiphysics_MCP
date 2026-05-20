@@ -346,7 +346,8 @@ def get_best_practices(category: str) -> dict:
 # Module-level PDF search functions for direct import and testing
 def get_pdf_search(query: str, n_results: int = 5, module: Optional[str] = None) -> dict:
     """Search COMSOL PDF documentation using semantic search."""
-    from .retriever import get_retriever, check_pdf_dependencies
+    from .retriever import VectorSearchError, get_retriever, check_pdf_dependencies
+    from .pdf_processor import PDFProcessor, DEFAULT_PDF_DIR
     
     deps = check_pdf_dependencies()
     if not deps.get("chromadb") or not deps.get("pymupdf"):
@@ -356,20 +357,60 @@ def get_pdf_search(query: str, n_results: int = 5, module: Optional[str] = None)
             "missing_deps": [k for k, v in deps.items() if not v],
         }
     
+    available_modules = []
+    try:
+        processor = PDFProcessor(DEFAULT_PDF_DIR)
+        available_modules = [m["name"] for m in processor.get_available_modules()]
+    except Exception:
+        available_modules = []
+
+    if module and available_modules and module not in available_modules:
+        return {
+            "success": False,
+            "error": f"Unknown PDF module: {module}",
+            "module_filter": module,
+            "available_modules": available_modules,
+        }
+
     retriever = get_retriever()
-    if not retriever.is_initialized:
-        retriever.initialize()
-    stats = retriever.get_stats()
+    lightweight_stats = retriever.get_lightweight_stats()
+    total_indexed = lightweight_stats.get("count", 0)
+    initialized = retriever.is_initialized or retriever.initialize()
+    if initialized:
+        total_indexed = retriever.get_count()
     
-    if not stats.get("initialized") or stats.get("count", 0) == 0:
+    if not initialized or total_indexed == 0:
+        if total_indexed > 0:
+            return {
+                "success": False,
+                "error": "PDF search failed: failed to initialize vector store",
+                "query": query,
+                "module_filter": module,
+                "initialized": initialized,
+                "total_indexed": total_indexed,
+                "vector_store": lightweight_stats,
+            }
         return {
             "success": False,
             "error": "PDF knowledge base not built. Run the build script first.",
             "hint": "Run: python scripts/build_knowledge_base.py",
+            "initialized": initialized,
+            "total_indexed": total_indexed,
+            "vector_store": lightweight_stats,
         }
     
     n_results = min(n_results, 20)
-    results = retriever.search(query, n_results, module)
+    try:
+        results = retriever.search(query, n_results, module)
+    except VectorSearchError as e:
+        return {
+            "success": False,
+            "error": f"PDF search failed: {e}",
+            "query": query,
+            "module_filter": module,
+            "initialized": initialized,
+            "total_indexed": total_indexed,
+        }
     
     return {
         "success": True,
@@ -377,7 +418,8 @@ def get_pdf_search(query: str, n_results: int = 5, module: Optional[str] = None)
         "module_filter": module,
         "results": [r.to_dict() for r in results],
         "count": len(results),
-        "total_indexed": stats.get("count", 0),
+        "total_indexed": total_indexed,
+        "initialized": initialized,
     }
 
 
@@ -407,6 +449,7 @@ def get_pdf_search_status() -> dict:
         processor = PDFProcessor(DEFAULT_PDF_DIR)
         modules = processor.get_available_modules()
         result["pdf_modules_available"] = len(modules)
+        result["vector_store"]["module_count"] = len(modules)
         result["modules"] = [m["name"] for m in modules[:20]]
         if len(modules) > 20:
             result["modules"].append(f"... and {len(modules) - 20} more")

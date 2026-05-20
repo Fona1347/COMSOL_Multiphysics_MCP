@@ -97,7 +97,9 @@ def main():
         print(f"\n[4] Existing knowledge base:")
         print(f"    Initialized: {stats.get('initialized', False)}")
         print(f"    Documents: {stats.get('count', 0)}")
-        print(f"    Modules indexed: {stats.get('module_count', 0)}")
+        if stats.get("dimension"):
+            print(f"    Embedding dimension: {stats.get('dimension')}")
+        print(f"    PDF modules available: {len(modules)}")
         if stats.get("count", 0) == 0:
             print("    Status: Knowledge base not built")
             print("    Hint: python scripts/build_knowledge_base.py --limit 2 --rebuild")

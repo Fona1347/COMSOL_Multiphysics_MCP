@@ -2,6 +2,7 @@
 
 import logging
 import os
+import contextlib
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
@@ -22,6 +23,14 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # Fast, good quality
 _LOCAL_MODEL_PATH = None
 
 
+@contextlib.contextmanager
+def _suppress_third_party_output():
+    """Silence noisy model-loading output that can break stdio MCP transport."""
+    with open(os.devnull, "w", encoding="utf-8") as devnull:
+        with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+            yield
+
+
 def _find_local_model_path() -> Optional[str]:
     """Find the local cache path for the embedding model."""
     import os
@@ -38,6 +47,11 @@ def _find_local_model_path() -> Optional[str]:
 def setup_hf_mirror():
     """Setup HuggingFace mirror for users in China."""
     global _LOCAL_MODEL_PATH
+
+    # MCP servers communicate over stdio; third-party progress bars can corrupt
+    # the transport or fail when handles are not interactive.
+    os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+    os.environ.setdefault("TQDM_DISABLE", "1")
     
     # Try to find local model first
     _LOCAL_MODEL_PATH = _find_local_model_path()
@@ -71,6 +85,10 @@ class SearchResult:
         }
 
 
+class VectorSearchError(RuntimeError):
+    """Raised when vector search fails before ChromaDB returns results."""
+
+
 class VectorRetriever:
     """Manage vector storage and retrieval for COMSOL documentation."""
     
@@ -102,9 +120,10 @@ class VectorRetriever:
                 if _LOCAL_MODEL_PATH:
                     logger.info(f"Using local cached model: {_LOCAL_MODEL_PATH}")
                 
-                self._embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name=model_name
-                )
+                with _suppress_third_party_output():
+                    self._embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+                        model_name=model_name
+                    )
             except Exception as e:
                 logger.error(f"Failed to initialize embedding function: {e}")
                 raise
@@ -129,7 +148,21 @@ class VectorRetriever:
             
         except Exception as e:
             logger.error(f"Failed to initialize vector store: {e}")
+            self._client = None
+            self._collection = None
+            self._embedding_fn = None
             return False
+
+    def get_count(self) -> int:
+        """Get the document count for the initialized vector store."""
+        if not self._collection:
+            return 0
+
+        try:
+            return self._collection.count()
+        except Exception as e:
+            logger.error(f"Failed to count vector store documents: {e}")
+            return 0
     
     def add_chunks(self, chunks: list[DocumentChunk]) -> int:
         """Add document chunks to the vector store."""
@@ -185,19 +218,20 @@ class VectorRetriever:
         """Search for relevant documents."""
         if not self._collection:
             if not self.initialize():
-                return []
+                raise VectorSearchError("Failed to initialize vector store")
         
         try:
             where_filter = None
             if module_filter:
                 where_filter = {"module": module_filter}
             
-            results = self._collection.query(
-                query_texts=[query],
-                n_results=n_results,
-                where=where_filter,
-                include=["documents", "metadatas", "distances"]
-            )
+            with _suppress_third_party_output():
+                results = self._collection.query(
+                    query_texts=[query],
+                    n_results=n_results,
+                    where=where_filter,
+                    include=["documents", "metadatas", "distances"]
+                )
             
             search_results = []
             if results and results["documents"]:
@@ -221,7 +255,7 @@ class VectorRetriever:
             
         except Exception as e:
             logger.error(f"Search failed: {e}")
-            return []
+            raise VectorSearchError(str(e)) from e
     
     def get_stats(self) -> dict:
         """Get statistics about the vector store."""
@@ -248,7 +282,7 @@ class VectorRetriever:
         }
 
     def get_lightweight_stats(self) -> dict:
-        """Get vector-store statistics without loading the embedding model."""
+        """Get vector-store statistics without loading Chroma or embeddings."""
         stats = {
             "initialized": False,
             "count": 0,
@@ -260,31 +294,45 @@ class VectorRetriever:
         if not self.db_dir.exists():
             return stats
 
+        sqlite_path = self.db_dir / "chroma.sqlite3"
+        if sqlite_path.exists():
+            try:
+                import sqlite3
+
+                con = sqlite3.connect(f"file:{sqlite_path}?mode=ro", uri=True)
+                try:
+                    collection = con.execute(
+                        "select id, dimension from collections where name = ?",
+                        ("comsol_docs",),
+                    ).fetchone()
+                    if not collection:
+                        return stats
+
+                    count = con.execute(
+                        "select count(*) from embeddings"
+                    ).fetchone()[0]
+
+                    stats.update({
+                        "initialized": True,
+                        "count": count,
+                        "dimension": collection[1],
+                    })
+                    return stats
+                finally:
+                    con.close()
+            except Exception as e:
+                stats["sqlite_error"] = str(e)
+
         try:
             import chromadb
 
             client = chromadb.PersistentClient(path=str(self.db_dir))
             collection = client.get_collection("comsol_docs")
             count = collection.count()
-            modules = set()
-
-            if count:
-                batch_size = 1000
-                for offset in range(0, count, batch_size):
-                    results = collection.get(
-                        include=["metadatas"],
-                        limit=batch_size,
-                        offset=offset,
-                    )
-                    for meta in results.get("metadatas", []):
-                        if meta and "module" in meta:
-                            modules.add(meta["module"])
 
             stats.update({
                 "initialized": True,
                 "count": count,
-                "modules": sorted(modules),
-                "module_count": len(modules),
             })
             return stats
         except Exception as e:
