@@ -457,6 +457,7 @@ def register_geometry_tools(mcp: FastMCP) -> None:
     def geometry_boolean_union(
         input_objects: Sequence[str],
         geometry_name: Optional[str] = None,
+        component_name: str = "comp1",
         model_name: Optional[str] = None
     ) -> dict:
         """
@@ -465,6 +466,7 @@ def register_geometry_tools(mcp: FastMCP) -> None:
         Args:
             input_objects: Names of objects to unite
             geometry_name: Geometry sequence name
+            component_name: Component name (default: 'comp1')
             model_name: Model name (default: current model)
         
         Returns:
@@ -478,19 +480,27 @@ def register_geometry_tools(mcp: FastMCP) -> None:
             }
         
         try:
-            geometries = model.geometries()
-            if not geometries:
-                return {"success": False, "error": "No geometry sequences found."}
+            geom, error = _get_geometry_node(model, geometry_name, component_name)
+            if error:
+                return {"success": False, "error": error}
             
-            target_geom = geometry_name or geometries[0]
-            geom_node = model / "geometries" / target_geom
-            union_node = geom_node.create("Union")
-            union_node.property("input", list(input_objects))
+            target_geom = geometry_name or str(geom.tag())
+            feat_name = "uni1"
+            index = 1
+            while True:
+                try:
+                    geom.feature(feat_name)
+                except Exception:
+                    break
+                index += 1
+                feat_name = f"uni{index}"
+            union_node = geom.feature().create(feat_name, "Union")
+            union_node.selection("input").set(list(input_objects))
             
             return {
                 "success": True,
                 "feature": {
-                    "name": union_node.name() if hasattr(union_node, 'name') else "Union",
+                    "name": feat_name,
                     "type": "Union",
                     "geometry": target_geom,
                     "input_objects": list(input_objects),

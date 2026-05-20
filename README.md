@@ -117,7 +117,7 @@ Create `opencode.json` in project root:
 
 ## Code Structure
 
-```java
+```text
 comsol_mcp/
 ├── opencode.json                    # MCP server config for opencode
 ├── pyproject.toml                   # Python project config
@@ -222,7 +222,7 @@ comsol_mcp/
 | `geometry_list_features`      | List features            |
 | `geometry_get_boundaries`     | Get boundary numbers     |
 
-### Physics (16)
+### Physics (17)
 
 | Tool                               | Description                  |
 | ---------------------------------- | ---------------------------- |
@@ -234,6 +234,7 @@ comsol_mcp/
 | `physics_add_heat_transfer`      | Add Heat Transfer            |
 | `physics_add_laminar_flow`       | Add Laminar Flow             |
 | `physics_configure_boundary`     | Configure boundary condition |
+| `material_create_basic`          | Create component material    |
 | `physics_set_material`           | Assign material              |
 | `physics_list_features`          | List physics features        |
 | `physics_remove`                 | Remove physics               |
@@ -251,10 +252,11 @@ comsol_mcp/
 | `mesh_create` | Generate mesh       |
 | `mesh_info`   | Get mesh statistics |
 
-### Study & Solving (8)
+### Study & Solving (9)
 
 | Tool                   | Description         |
 | ---------------------- | ------------------- |
+| `study_create_stationary` | Create stationary study |
 | `study_list`         | List studies        |
 | `study_solve`        | Solve synchronously |
 | `study_solve_async`  | Solve in background |
@@ -376,13 +378,13 @@ comp = jm.component().create('comp1', True)
 # Create 3D geometry
 geom = comp.geom().create('geom1', 3)
 
-# Create physics with geometry reference
+# Create physics with explicit component and geometry tags
 physics = comp.physics().create('spf', 'LaminarFlow', 'geom1')
 
 # Boundary condition with selection
 bc = physics.create('inl1', 'InletBoundary')
 bc.selection().set([1, 2, 3])
-bc.set('U0', '1[mm/s]')
+bc.set('U0in', '1[mm/s]')
 ```
 
 ### 2. Boundary Condition Property Names
@@ -392,7 +394,7 @@ bc.set('U0', '1[mm/s]')
 | Heat Transfer | HeatFluxBoundary    | `q0`                           |
 | Heat Transfer | TemperatureBoundary | `T0`                           |
 | Heat Transfer | ConvectiveHeatFlux  | `h`, `Text`                  |
-| Laminar Flow  | InletBoundary       | `U0`, `NormalInflowVelocity` |
+| Laminar Flow  | InletBoundary       | `U0in`, `NormalInflowVelocity` |
 | Laminar Flow  | OutletBoundary      | `p0`                           |
 
 ### 3. Client Session Limitation

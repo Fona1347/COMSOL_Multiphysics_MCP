@@ -1,9 +1,29 @@
 """Session management tools for COMSOL MCP Server."""
 
+import os
+from pathlib import Path
 from typing import Optional
 from mcp.server import Server
 from mcp.server.fastmcp import FastMCP
 import mph
+
+DEFAULT_COMSOL_ROOT = Path(r"D:\Softwares_02\COMSOL64\Multiphysics")
+DEFAULT_COMSOL_JAVA_EXE = DEFAULT_COMSOL_ROOT / "java" / "win64" / "jre" / "bin" / "java.exe"
+DEFAULT_COMSOL_JAVAC_EXE = DEFAULT_COMSOL_ROOT / "java" / "win64" / "jre" / "bin" / "javac.exe"
+DEFAULT_COMSOL_BATCH_EXE = DEFAULT_COMSOL_ROOT / "bin" / "win64" / "comsolbatch.exe"
+DEFAULT_COMSOL_COMPILE_EXE = DEFAULT_COMSOL_ROOT / "bin" / "win64" / "comsolcompile.exe"
+
+
+def _runtime_path(env_name: str, default: Path) -> dict:
+    """Resolve and report a COMSOL runtime executable path."""
+    raw_path = os.getenv(env_name, str(default))
+    path = Path(raw_path)
+    return {
+        "env": env_name,
+        "path": str(path),
+        "exists": path.exists(),
+        "source": "environment" if os.getenv(env_name) else "default",
+    }
 
 
 class SessionManager:
@@ -207,3 +227,29 @@ def register_session_tools(mcp: FastMCP) -> None:
             Session information including connection status, version, and loaded models
         """
         return session_manager.get_status()
+
+    @mcp.tool()
+    def comsol_java_runtime_status() -> dict:
+        """
+        Check configured COMSOL Java and launcher runtime executables.
+
+        This is diagnostic only; MCP modeling still runs through the active
+        Python/MPh/JPype COMSOL client session by default.
+
+        Returns:
+            Paths and existence checks for Java, javac, comsolbatch, and comsolcompile
+        """
+        runtimes = {
+            "java": _runtime_path("COMSOL_JAVA_EXE", DEFAULT_COMSOL_JAVA_EXE),
+            "javac": _runtime_path("COMSOL_JAVAC_EXE", DEFAULT_COMSOL_JAVAC_EXE),
+            "comsolbatch": _runtime_path("COMSOL_BATCH_EXE", DEFAULT_COMSOL_BATCH_EXE),
+            "comsolcompile": _runtime_path("COMSOL_COMPILE_EXE", DEFAULT_COMSOL_COMPILE_EXE),
+        }
+        return {
+            "success": True,
+            "runtimes": runtimes,
+            "note": (
+                "Bare java.exe does not automatically include COMSOL Model API "
+                "classpath, native libraries, license, or current MCP model context."
+            ),
+        }

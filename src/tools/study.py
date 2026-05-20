@@ -7,9 +7,81 @@ from .session import session_manager
 from ..async_handler.solver import async_solver
 
 
+def _java_node_label(node) -> str:
+    """Return a Java node label, falling back to its tag."""
+    try:
+        return str(node.label())
+    except Exception:
+        try:
+            return str(node.tag())
+        except Exception:
+            return ""
+
+
 def register_study_tools(mcp: FastMCP) -> None:
     """Register study and solving tools with the MCP server."""
     
+    @mcp.tool()
+    def study_create_stationary(
+        study_name: str = "std1",
+        step_name: str = "stat",
+        model_name: Optional[str] = None
+    ) -> dict:
+        """
+        Create a stationary study step.
+
+        Args:
+            study_name: Study tag to create or reuse (default: std1)
+            step_name: Stationary step tag to create (default: stat)
+            model_name: Model name (default: current model)
+
+        Returns:
+            Created or reused stationary study information
+        """
+        model = session_manager.get_model(model_name)
+        if model is None:
+            return {
+                "success": False,
+                "error": f"Model not found: {model_name or 'no current model'}"
+            }
+
+        try:
+            jm = model.java
+            existing_studies = [str(study.tag()) for study in jm.study()]
+            if study_name in existing_studies:
+                study = jm.study(study_name)
+                created_study = False
+            else:
+                study = jm.study().create(study_name)
+                created_study = True
+
+            existing_steps = [str(step.tag()) for step in study.feature()]
+            if step_name in existing_steps:
+                created_step = False
+            else:
+                study.create(step_name, "Stationary")
+                created_step = True
+
+            return {
+                "success": True,
+                "model": model.name(),
+                "study": {
+                    "tag": str(study.tag()),
+                    "label": _java_node_label(study),
+                    "created": created_study,
+                },
+                "step": {
+                    "tag": step_name,
+                    "type": "Stationary",
+                    "created": created_step,
+                },
+                "type": "Stationary",
+                "created_study": created_study,
+                "created_step": created_step,
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Failed to create stationary study: {str(e)}"}
+
     @mcp.tool()
     def study_list(model_name: Optional[str] = None) -> dict:
         """
@@ -29,15 +101,22 @@ def register_study_tools(mcp: FastMCP) -> None:
             }
         
         try:
-            studies = model.studies()
-            
+            jm = model.java
             study_info = []
-            for study_name in studies:
-                info = {"name": study_name}
+            for study in jm.study():
+                info = {
+                    "tag": str(study.tag()),
+                    "label": _java_node_label(study),
+                    "steps": [],
+                }
                 try:
-                    study_node = model / "studies" / study_name
-                    children = [child.name() for child in study_node.children()]
-                    info["steps"] = children
+                    info["steps"] = [
+                        {
+                            "tag": str(step.tag()),
+                            "label": _java_node_label(step),
+                        }
+                        for step in study.feature()
+                    ]
                 except Exception:
                     pass
                 study_info.append(info)

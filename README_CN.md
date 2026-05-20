@@ -351,7 +351,7 @@ python client_script/create_micromixer_auto.py
 
 模型会按结构化路径保存：
 
-```
+```besh
 ./comsol_models/{model_name}/{model_name}_{timestamp}.mph
 ./comsol_models/{model_name}/{model_name}_latest.mph
 ```
