@@ -297,13 +297,13 @@ comsol_mcp/
 
 对带有 Through-Silicon Via（TSV，硅通孔）的硅芯片进行 3D 热分析。
 
-**几何**：60x60x5 um 芯片，5 um 直径 TSV 孔，10x10 um 热源
+**几何**：60×60×5 µm 芯片，5 µm 直径 TSV 孔，10×10 µm 热源
 
 ```python
 # Key steps:
 # 1. Create chip block and TSV cylinder
 # 2. Boolean difference (subtract TSV from chip)
-# 3. Add Silicon material (k=130 W/m路K)
+# 3. Add Silicon material (k=130 W/m·K)
 # 4. Add Heat Transfer physics
 # 5. Set heat flux on top, temperature on bottom
 # 6. Solve and evaluate temperature distribution
@@ -318,18 +318,18 @@ cd /path/to/comsol-mcp
 python client_script/create_chip_tsv_final.py
 ```
 
-**结果**：在 1 MW/m2 热通量下相对环境温度的升温。
+**结果**：在 1 MW/m² 热通量下相对环境温度的升温。
 
 ### 案例 2：微混合器流体流动
 
 微流控通道中的 3D 层流仿真。
 
-**几何**：600x100x50 um 矩形通道
+**几何**：600×100×50 µm 矩形通道
 
 ```python
 # Key steps:
 # 1. Create rectangular channel block
-# 2. Add water material (蟻=1000 kg/m鲁, 渭=0.001 Pa路s)
+# 2. Add water material (ρ=1000 kg/m³, μ=0.001 Pa·s)
 # 3. Add Laminar Flow physics
 # 4. Set inlet velocity (1 mm/s), outlet pressure
 # 5. Add Transport of Diluted Species for mixing
