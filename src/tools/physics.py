@@ -783,11 +783,6 @@ def register_physics_tools(mcp: FastMCP) -> None:
                 "success": False,
                 "error": f"Model not found: {model_name or 'no current model'}"
             }
-        if not boundary_condition:
-            return {"success": False, "error": "boundary_condition is required."}
-        if not boundary_selection:
-            return {"success": False, "error": "boundary_selection is required."}
-
         try:
             jm = model.java
             comp, error = _get_component_by_tag(jm, component_name)

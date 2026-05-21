@@ -163,7 +163,21 @@ def register_study_tools(mcp: FastMCP) -> None:
         
         try:
             if wait:
-                model.solve(study_name)
+                jm = model.java
+                if study_name:
+                    available_studies = [str(study.tag()) for study in jm.study()]
+                    if study_name not in available_studies:
+                        return {
+                            "success": False,
+                            "error": (
+                                f"Study tag not found: {study_name}. "
+                                f"Available studies: {available_studies}"
+                            ),
+                        }
+                    jm.study(study_name).run()
+                else:
+                    for study in jm.study():
+                        study.run()
                 return {
                     "success": True,
                     "study": study_name,
